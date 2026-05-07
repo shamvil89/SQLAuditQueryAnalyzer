@@ -1,0 +1,6 @@
+source_row,username,event_datetime,server_name,database_name,operation,target_table,confidence,reason,query
+1,alice,08-05-2026 10:00,sql-prod-01,Sales,UPDATE,dbo.Customer,0.9897,UPDATE targets non-temporary table dbo.Customer,UPDATE dbo.Customer SET Name = 'A' WHERE Id = 1
+3,carol,08-05-2026 10:02,sql-prod-01,Sales,DELETE,sales.Orders,0.7278,DELETE targets non-temporary table sales.Orders,DELETE FROM sales.Orders WHERE OrderId = 10
+5,dave,08-05-2026 10:03,sql-prod-01,Sales,DELETE,dbo.customers,0.9990,DELETE targets non-temporary table dbo.customers,insert into #temp1 select * FROM dbo.Customer; delete from dbo.customers
+6,dave,08-05-2026 10:03,sql-prod-01,Sales,DELETE,dbo.customers,1.0000,DELETE targets non-temporary table dbo.customers,insert into #temp1 select * FROM dbo.Customer; delete from dbo.customers where id in (select id from #temp1)
+7,shamvil,08-05-2026 10:03,sql-prod-01,Sales,UPDATE,stage.example,1.0000,UPDATE targets non-temporary table stage.example,WITH cte AS (SELECT Id FROM dbo.JobQueue WHERE Status = 'Ready') UPDATE stage.example SET Status = 'Running' WHERE Id IN (SELECT TOP (10) Id FROM cte ORDER BY Id);

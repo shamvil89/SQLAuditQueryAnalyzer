@@ -1,0 +1,8 @@
+EventTime,LoginName,ServerName,DatabaseName,TextData
+08-05-2026 10:00,alice,sql-prod-01,Sales,UPDATE dbo.Customer SET Name = 'A' WHERE Id = 1
+08-05-2026 10:01,bob,sql-prod-01,Sales,INSERT INTO #Temp VALUES (1)
+08-05-2026 10:02,carol,sql-prod-01,Sales,DELETE FROM sales.Orders WHERE OrderId = 10
+08-05-2026 10:03,dave,sql-prod-01,Sales,SELECT * FROM dbo.Customer
+08-05-2026 10:03,dave,sql-prod-01,Sales,insert into #temp1 select * FROM dbo.Customer; delete from dbo.customers
+08-05-2026 10:03,dave,sql-prod-01,Sales,insert into #temp1 select * FROM dbo.Customer; delete from dbo.customers where id in (select id from #temp1)
+08-05-2026 10:03,shamvil,sql-prod-01,Sales,WITH cte AS (SELECT Id FROM dbo.JobQueue WHERE Status = 'Ready') UPDATE stage.example SET Status = 'Running' WHERE Id IN (SELECT TOP (10) Id FROM cte ORDER BY Id);
