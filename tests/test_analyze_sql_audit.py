@@ -89,6 +89,8 @@ class AnalyzeSqlAuditTests(unittest.TestCase):
                 server_column=None,
                 database_column=None,
                 run_id="unit_test",
+                progress_every=0,
+                no_progress=True,
             )
             findings, summary = analyze_csv(args)
             self.assertEqual(len(findings), 1)

@@ -117,6 +117,18 @@ out\findings_<timestamp>.csv
 out\summary_<timestamp>.json
 ```
 
+For larger files, the analyzer prints progress every 500 rows by default:
+
+```powershell
+.\.venv\Scripts\python.exe .\audit_ai\analyze_sql_audit.py .\audit.csv --out-dir .\out --progress-every 250
+```
+
+To disable progress messages:
+
+```powershell
+.\.venv\Scripts\python.exe .\audit_ai\analyze_sql_audit.py .\audit.csv --out-dir .\out --no-progress
+```
+
 ## Explicit Column Mapping
 
 Use explicit mapping when your CSV headers are unusual:

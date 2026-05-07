@@ -297,6 +297,17 @@ WRITE_PATTERNS: Sequence[Tuple[str, re.Pattern[str]]] = (
     ("TRUNCATE", re.compile(rf"\bTRUNCATE\s+TABLE\s+(?P<table>{IDENTIFIER})", re.IGNORECASE)),
     ("SELECT_INTO", re.compile(rf"\bSELECT\b[\s\S]*?\bINTO\s+(?P<table>{IDENTIFIER})\s+\bFROM\b", re.IGNORECASE)),
 )
+WRITE_KEYWORD_RE = re.compile(r"\b(delete|insert|update|merge|truncate|select)\b", re.IGNORECASE)
+SELECT_INTO_HINT_RE = re.compile(r"\bselect\b[\s\S]{0,5000}\binto\b", re.IGNORECASE)
+
+
+def has_write_keyword_hint(sql: str) -> bool:
+    if not WRITE_KEYWORD_RE.search(sql):
+        return False
+    lowered = sql.lower()
+    if any(keyword in lowered for keyword in ("delete", "insert", "update", "merge", "truncate")):
+        return True
+    return bool(SELECT_INTO_HINT_RE.search(sql))
 
 
 def extract_write_targets(sql: str) -> List[Tuple[str, str]]:
@@ -364,13 +375,16 @@ def score_sql(sql: str, model: Dict[str, object]) -> float:
 
 
 def analyze_query(sql: str, model: Optional[Dict[str, object]] = None) -> List[WriteMatch]:
+    if not has_write_keyword_hint(sql):
+        return []
     if model is None:
         model = load_model()
+    target_matches = [(operation, table) for operation, table in extract_write_targets(sql) if not is_temp_table(table)]
+    if not target_matches:
+        return []
     confidence = score_sql(sql, model)
     findings = []
-    for operation, table in extract_write_targets(sql):
-        if is_temp_table(table):
-            continue
+    for operation, table in target_matches:
         findings.append(
             WriteMatch(
                 operation=operation,
@@ -425,8 +439,16 @@ def analyze_csv(args: argparse.Namespace) -> Tuple[List[Dict[str, str]], Dict[st
 
         findings: List[Dict[str, str]] = []
         total_rows = 0
+        skipped_by_prefilter = 0
+        progress_every = int(getattr(args, "progress_every", 0) or 0)
+        no_progress = bool(getattr(args, "no_progress", False))
         for total_rows, row in enumerate(reader, start=1):
+            if progress_every and not no_progress and total_rows % progress_every == 0:
+                print(f"Processed {total_rows} rows; findings so far: {len(findings)}", flush=True)
             query = row.get(query_col, "") or ""
+            if not has_write_keyword_hint(query):
+                skipped_by_prefilter += 1
+                continue
             for match in analyze_query(query, model):
                 findings.append(
                     {
@@ -465,6 +487,7 @@ def analyze_csv(args: argparse.Namespace) -> Tuple[List[Dict[str, str]], Dict[st
         "input_file": str(input_path),
         "total_rows": total_rows,
         "findings": len(findings),
+        "skipped_by_prefilter": skipped_by_prefilter,
         "by_operation": dict(Counter(finding["operation"] for finding in findings)),
         "by_user": dict(Counter(finding["username"] for finding in findings if finding["username"])),
         "by_database": dict(Counter(finding["database_name"] for finding in findings if finding["database_name"])),
@@ -487,6 +510,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--server-column", help="Column containing server name.")
     parser.add_argument("--database-column", help="Column containing database name.")
     parser.add_argument("--run-id", help="Optional output file suffix. Defaults to current timestamp.")
+    parser.add_argument("--progress-every", type=int, default=500, help="Print progress after this many rows. Use 0 to disable.")
+    parser.add_argument("--no-progress", action="store_true", help="Disable progress messages.")
     parser.add_argument("--train-model", action="store_true", help="Train the bundled lightweight offline model and exit.")
     return parser
 

@@ -34,7 +34,11 @@ Invoke-Checked { & $venvPython -m unittest discover -s (Join-Path $ProjectRoot "
 
 Write-Host "Creating sample output in .\out"
 $runId = "deployment_check_{0}" -f (Get-Date -Format "yyyyMMdd_HHmmss")
-Invoke-Checked { & $venvPython (Join-Path $ProjectRoot "audit_ai\analyze_sql_audit.py") (Join-Path $ProjectRoot "samples\sample_audit.csv") --out-dir (Join-Path $ProjectRoot "out") --run-id $runId }
+$analyzerPath = Join-Path $ProjectRoot "audit_ai\analyze_sql_audit.py"
+$samplePath = Join-Path $ProjectRoot "samples\sample_audit.csv"
+$outPath = Join-Path $ProjectRoot "out"
+Write-Host "Analyzer command: $venvPython $analyzerPath $samplePath --out-dir $outPath --run-id $runId --progress-every 100"
+Invoke-Checked { & $venvPython $analyzerPath $samplePath --out-dir $outPath --run-id $runId --progress-every 100 }
 
 Write-Host ""
 Write-Host "Deployment complete."
