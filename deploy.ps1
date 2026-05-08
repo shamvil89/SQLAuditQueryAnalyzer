@@ -32,13 +32,22 @@ Invoke-Checked { & $venvPython (Join-Path $ProjectRoot "audit_ai\analyze_sql_aud
 Write-Host "Running tests"
 Invoke-Checked { & $venvPython -m unittest discover -s (Join-Path $ProjectRoot "tests") }
 
-Write-Host "Creating sample output in .\out"
-$runId = "deployment_check_{0}" -f (Get-Date -Format "yyyyMMdd_HHmmss")
 $analyzerPath = Join-Path $ProjectRoot "audit_ai\analyze_sql_audit.py"
-$samplePath = Join-Path $ProjectRoot "samples\sample_audit.csv"
+$samplesPath = Join-Path $ProjectRoot "samples"
 $outPath = Join-Path $ProjectRoot "out"
-Write-Host "Analyzer command: $venvPython $analyzerPath $samplePath --out-dir $outPath --run-id $runId --progress-every 100"
-Invoke-Checked { & $venvPython $analyzerPath $samplePath --out-dir $outPath --run-id $runId --progress-every 100 }
+$sampleFiles = Get-ChildItem -LiteralPath $samplesPath -Filter "*.csv" -File | Sort-Object Name
+if ($sampleFiles.Count -eq 0) {
+    throw "No CSV files found in $samplesPath"
+}
+
+Write-Host "Creating sample output in .\out for $($sampleFiles.Count) CSV file(s)"
+foreach ($sampleFile in $sampleFiles) {
+    $safeName = [System.IO.Path]::GetFileNameWithoutExtension($sampleFile.Name) -replace '[^A-Za-z0-9_-]', '_'
+    $runId = "deployment_check_{0}_{1}" -f $safeName, (Get-Date -Format "yyyyMMdd_HHmmss")
+    Write-Host "Analyzing sample CSV: $($sampleFile.FullName)"
+    Write-Host "Analyzer command: $venvPython $analyzerPath $($sampleFile.FullName) --out-dir $outPath --run-id $runId --progress-every 100"
+    Invoke-Checked { & $venvPython $analyzerPath $sampleFile.FullName --out-dir $outPath --run-id $runId --progress-every 100 }
+}
 
 Write-Host ""
 Write-Host "Deployment complete."

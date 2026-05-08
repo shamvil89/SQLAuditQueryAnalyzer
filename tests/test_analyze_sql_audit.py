@@ -20,6 +20,7 @@ class AnalyzeSqlAuditTests(unittest.TestCase):
             ("MERGE INTO dbo.Inventory AS target USING dbo.Stage AS source ON target.Id = source.Id WHEN MATCHED THEN UPDATE SET Qty = source.Qty", "MERGE", "dbo.Inventory"),
             ("TRUNCATE TABLE dbo.LoadStage", "TRUNCATE", "dbo.LoadStage"),
             ("SELECT * INTO dbo.ArchiveOrders FROM dbo.Orders", "SELECT_INTO", "dbo.ArchiveOrders"),
+            ("INSERT INTO dbo.XmlAuditLog (AuditId, PayloadXml) VALUES (1, '<audit><action>update</action></audit>')", "INSERT", "dbo.XmlAuditLog"),
         ]
         for sql, operation, table in cases:
             with self.subTest(sql=sql):
@@ -34,6 +35,7 @@ class AnalyzeSqlAuditTests(unittest.TestCase):
         self.assertTrue(any("WITH " in sql.upper() for sql, _ in TRAINING_EXAMPLES))
         self.assertTrue(any("GRANT " in sql.upper() for sql, _ in TRAINING_EXAMPLES))
         self.assertTrue(any("REVOKE " in sql.upper() for sql, _ in TRAINING_EXAMPLES))
+        self.assertTrue(any("XML" in sql.upper() for sql, _ in TRAINING_EXAMPLES))
 
     def test_ignores_temp_tables_and_read_only_queries(self):
         cases = [

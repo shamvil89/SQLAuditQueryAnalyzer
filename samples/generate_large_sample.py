@@ -43,6 +43,10 @@ def base_sql(index: int) -> str:
         "REVOKE DELETE ON dbo.Customer FROM cleanup_role;",
         f"TRUNCATE TABLE stage.CustomerLoad_{table_suffix};",
         f"SELECT * INTO reporting.CustomerSnapshot_{table_suffix} FROM dbo.Customer WHERE IsActive = 1;",
+        f"INSERT INTO dbo.XmlAuditLog (AuditId, PayloadXml, CreatedAt) VALUES ({index}, '<audit><action>insert</action><row>{index}</row></audit>', SYSUTCDATETIME());",
+        f"INSERT INTO dbo.CustomerMessage (CustomerId, MessageXml) VALUES ({index}, CAST('<message><subject>Welcome</subject><body>Customer {index}</body></message>' AS xml));",
+        f"INSERT INTO integration.InboundXmlQueue (SourceSystem, DocumentXml, ReceivedAt) VALUES ('CRM', '<customer id=\"{index}\"><status>active</status></customer>', SYSUTCDATETIME());",
+        f"INSERT INTO #XmlStage (PayloadXml) VALUES ('<temp><row>{index}</row><value>ignored</value></temp>');",
     ]
     return patterns[index % len(patterns)]
 
@@ -108,4 +112,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

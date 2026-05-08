@@ -164,6 +164,16 @@ TRAINING_EXAMPLES: Sequence[Tuple[str, int]] = (
     ("INSERT INTO ##GlobalStage VALUES (1, 'abc');", 0),
     ("UPDATE tempdb..#Work SET Processed = 1;", 0),
     ("DELETE FROM tempdb..##GlobalWork WHERE Processed = 1;", 0),
+    ("INSERT INTO dbo.XmlAuditLog (AuditId, PayloadXml, CreatedAt) VALUES (1, '<audit><action>update</action><table>Customer</table></audit>', SYSUTCDATETIME());", 1),
+    ("INSERT INTO dbo.CustomerMessage (CustomerId, MessageXml) VALUES (@CustomerId, CAST('<message><subject>Welcome</subject><body>Hello</body></message>' AS xml));", 1),
+    ("INSERT INTO integration.InboundXmlQueue (SourceSystem, DocumentXml, ReceivedAt) VALUES ('CRM', @PayloadXml, SYSUTCDATETIME());", 1),
+    ("INSERT INTO [dbo].[XmlEventStore] ([EventName], [EventXml]) VALUES ('OrderSubmitted', '<order id=\"100\"><amount>99.00</amount></order>');", 1),
+    ("INSERT dbo.SoapRequestLog (RequestId, RequestXml, ResponseXml) VALUES (@RequestId, @RequestBodyXml, NULL);", 1),
+    ("INSERT INTO audit.XmlChangeSet (EntityName, BeforeXml, AfterXml) VALUES ('Customer', @BeforeXml, @AfterXml);", 1),
+    ("INSERT INTO dbo.ConfigXml (ConfigName, ConfigValueXml) VALUES ('FeatureFlags', '<flags><flag name=\"NewCheckout\" enabled=\"true\" /></flags>');", 1),
+    ("INSERT INTO dbo.XmlPayloadArchive (PayloadXml) SELECT CAST(RawPayload AS xml) FROM stage.RawPayload WHERE PayloadType = 'xml';", 1),
+    ("INSERT INTO #XmlStage (PayloadXml) VALUES ('<temp><value>ignored</value></temp>');", 0),
+    ("SELECT '<audit><operation>INSERT</operation><table>dbo.XmlAuditLog</table></audit>' AS XmlText;", 0),
 )
 
 

@@ -56,14 +56,14 @@ powershell -ExecutionPolicy Bypass -File ".\deploy.ps1"
 - Recreate `.venv` if it was copied from another server or points to a missing Python path
 - Train the bundled offline model
 - Run tests
-- Analyze `samples\sample_audit.csv`
-- Create validation output in `out`
+- Analyze every `.csv` file in `samples`
+- Create validation output in `out` for each sample CSV
 
 Validation output files look like:
 
 ```text
-out\findings_deployment_check_<timestamp>.csv
-out\summary_deployment_check_<timestamp>.json
+out\findings_deployment_check_<sample_name>_<timestamp>.csv
+out\summary_deployment_check_<sample_name>_<timestamp>.json
 ```
 
 ## Dependency Installer
